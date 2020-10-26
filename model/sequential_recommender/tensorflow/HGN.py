@@ -171,6 +171,7 @@ class HGN(AbstractRecommender):
                                              shuffle=True, drop_last=False)
 
         self.logger.info(self.evaluator.metrics_info())
+        results = []
         for epoch in range(self.epochs):
             for bat_user, bat_item_seq, bat_item_pos, bat_item_neg in data_iter:
                 feed = {self.user_ph: bat_user,
@@ -181,10 +182,13 @@ class HGN(AbstractRecommender):
                 self.sess.run(self.train_opt, feed_dict=feed)
 
             result = self.evaluate_model()
-            self.logger.info("epoch %d:\t%s" % (epoch, result))
+            results.append([result])
+            buf = '\t'.join([("%.8f" % x).ljust(12) for x in result])
+            self.logger.info("epoch %d:\t%s" % (epoch, buf))
+            return result
 
     def evaluate_model(self):
-        return self.evaluator.evaluate(self)
+        return self.evaluator.my_evaluate(self)
 
     def predict(self, users, neg_items=None):
         bat_seq = [self.user_truncated_seq[u] for u in users]

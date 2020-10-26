@@ -137,6 +137,7 @@ class MultVAE(AbstractRecommender):
         self.logger.info(self.evaluator.metrics_info())
 
         update_count = 0.0
+        results = []
         for epoch in range(self.epochs):
             for bat_users in user_iter:
                 bat_input = self.train_csr_mat[bat_users]
@@ -153,10 +154,13 @@ class MultVAE(AbstractRecommender):
                 self.sess.run(self.train_opt, feed_dict=feed_dict)
                 update_count += 1
             result = self.evaluate_model()
-            self.logger.info("epoch %d:\t%s" % (epoch, result))
+            results.append([result])
+            buf = '\t'.join([("%.8f" % x).ljust(12) for x in result])
+            self.logger.info("epoch %d:\t%s" % (epoch, buf))
+        return results
 
     def evaluate_model(self):
-        return self.evaluator.evaluate(self)
+        return self.evaluator.my_evaluate(self)
 
     def predict(self, users):
         users = np.asarray(users)

@@ -81,9 +81,9 @@ class FPMC(AbstractRecommender):
 
     def train_model(self):
         if self.is_pairwise:
-            self._train_pairwise()
+            return self._train_pairwise()
         else:
-            self._train_pointwise()
+            return self._train_pointwise()
 
     def _train_pairwise(self):
         data_iter = TimeOrderPairwiseSampler(self.dataset.train_data,
@@ -91,6 +91,7 @@ class FPMC(AbstractRecommender):
                                              batch_size=self.batch_size,
                                              shuffle=True, drop_last=False)
         self.logger.info(self.evaluator.metrics_info())
+        results = []
         for epoch in range(self.epochs):
             for bat_users, bat_last_items, bat_pos_items, bat_neg_items in data_iter:
                 feed = {self.user_ph: bat_users,
@@ -99,7 +100,10 @@ class FPMC(AbstractRecommender):
                         self.neg_item_ph: bat_neg_items}
                 self.sess.run(self.train_opt, feed_dict=feed)
             result = self.evaluate_model()
-            self.logger.info("epoch %d:\t%s" % (epoch, result))
+            buf = '\t'.join([("%.8f" % x).ljust(12) for x in result])
+            self.logger.info("epoch %d:\t%s" % (epoch, buf))
+            results.append([result])
+        return results
 
     def _train_pointwise(self):
         data_iter = TimeOrderPointwiseSampler(self.dataset.train_data,
@@ -107,6 +111,7 @@ class FPMC(AbstractRecommender):
                                               batch_size=self.batch_size,
                                               shuffle=True, drop_last=False)
         self.logger.info(self.evaluator.metrics_info())
+        results = []
         for epoch in range(self.epochs):
             for bat_users, bat_last_items, bat_items, bat_labels in data_iter:
                 feed = {self.user_ph: bat_users,
@@ -115,10 +120,13 @@ class FPMC(AbstractRecommender):
                         self.labels_ph: bat_labels}
                 self.sess.run(self.train_opt, feed_dict=feed)
             result = self.evaluate_model()
-            self.logger.info("epoch %d:\t%s" % (epoch, result))
+            buf = '\t'.join([("%.8f" % x).ljust(12) for x in result])
+            self.logger.info("epoch %d:\t%s" % (epoch, buf))
+            results.append([result])
+        return results
 
     def evaluate_model(self):
-        return self.evaluator.evaluate(self)
+        return self.evaluator.my_evaluate(self)
 
     def predict(self, users):
         last_items = [self.user_pos_dict[u][-1] for u in users]

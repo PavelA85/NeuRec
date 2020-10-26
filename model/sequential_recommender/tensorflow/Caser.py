@@ -145,6 +145,7 @@ class Caser(AbstractRecommender):
                                              batch_size=self.batch_size,
                                              shuffle=True, drop_last=False)
         self.logger.info(self.evaluator.metrics_info())
+        results = []
         for epoch in range(self.epochs):
             for bat_users, bat_item_seqs, bat_pos_items, bat_neg_items in data_iter:
                 feed = {self.user_ph: bat_users,
@@ -156,10 +157,13 @@ class Caser(AbstractRecommender):
                 self.sess.run(self.train_opt, feed_dict=feed)
 
             result = self.evaluate_model()
-            self.logger.info("epoch %d:\t%s" % (epoch, result))
+            results.append([result])
+            buf = '\t'.join([("%.8f" % x).ljust(12) for x in result])
+            self.logger.info("epoch %d:\t%s" % (epoch, buf))
+        return results
 
     def evaluate_model(self):
-        return self.evaluator.evaluate(self)
+        return self.evaluator.my_evaluate(self)
 
     def predict(self, users):
         bat_seq = [self.user_truncated_seq[u] for u in users]

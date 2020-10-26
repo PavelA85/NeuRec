@@ -17,6 +17,7 @@ from util.common import Reduction
 from data import PairwiseSampler, PointwiseSampler
 
 
+# noinspection DuplicatedCode
 class MF(AbstractRecommender):
     def __init__(self, config):
         super(MF, self).__init__(config)
@@ -63,7 +64,7 @@ class MF(AbstractRecommender):
         # reg loss
         reg_loss = l2_loss(user_emb, pos_item_emb, pos_bias)
         if self.is_pairwise:
-            model_loss = pairwise_loss(self.loss_func, yi_hat-yj_hat, reduction=Reduction.SUM)
+            model_loss = pairwise_loss(self.loss_func, yi_hat - yj_hat, reduction=Reduction.SUM)
             reg_loss += l2_loss(neg_item_emb, neg_bias)
         else:
             model_loss = pointwise_loss(self.loss_func, yi_hat, self.label_ph, reduction=Reduction.SUM)
@@ -78,14 +79,15 @@ class MF(AbstractRecommender):
 
     def train_model(self):
         if self.is_pairwise:
-            self._train_pairwise()
+            return self._train_pairwise()
         else:
-            self._train_pointwise()
+            return self._train_pointwise()
 
     def _train_pairwise(self):
         data_iter = PairwiseSampler(self.dataset.train_data, num_neg=1,
                                     batch_size=self.batch_size,
                                     shuffle=True, drop_last=False)
+        results = []
         self.logger.info(self.evaluator.metrics_info())
         for epoch in range(self.epochs):
             for bat_users, bat_pos_items, bat_neg_items in data_iter:
@@ -94,12 +96,16 @@ class MF(AbstractRecommender):
                         self.neg_item_ph: bat_neg_items}
                 self.sess.run(self.train_opt, feed_dict=feed)
             result = self.evaluate_model()
-            self.logger.info("epoch %d:\t%s" % (epoch, result))
+            results.append([result])
+            buf = '\t'.join([("%.8f" % x).ljust(12) for x in result])
+            self.logger.info("epoch %d:\t%s" % (epoch, buf))
+        return results
 
     def _train_pointwise(self):
         data_iter = PointwiseSampler(self.dataset.train_data, num_neg=1,
                                      batch_size=self.batch_size,
                                      shuffle=True, drop_last=False)
+        results = []
         self.logger.info(self.evaluator.metrics_info())
         for epoch in range(self.epochs):
             for bat_users, bat_items, bat_labels in data_iter:
@@ -108,10 +114,13 @@ class MF(AbstractRecommender):
                         self.label_ph: bat_labels}
                 self.sess.run(self.train_opt, feed_dict=feed)
             result = self.evaluate_model()
-            self.logger.info("epoch %d:\t%s" % (epoch, result))
+            results.append([result])
+            buf = '\t'.join([("%.8f" % x).ljust(12) for x in result])
+            self.logger.info("epoch %d:\t%s" % (epoch, buf))
+        return results
 
     def evaluate_model(self):
-        return self.evaluator.evaluate(self)
+        return self.evaluator.my_evaluate(self)
 
     def predict(self, users):
         all_ratings = self.sess.run(self.batch_ratings, feed_dict={self.user_ph: users})

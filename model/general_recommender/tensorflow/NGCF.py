@@ -181,15 +181,16 @@ class NGCF(AbstractRecommender):
 
     def train_model(self):
         if self.is_pairwise:
-            self._train_pairwise()
+            return self._train_pairwise()
         else:
-            self._train_pointwise()
+            return self._train_pointwise()
 
     def _train_pairwise(self):
         data_iter = PairwiseSampler(self.dataset.train_data, num_neg=1,
                                     batch_size=self.batch_size,
                                     shuffle=True, drop_last=False)
         self.logger.info(self.evaluator.metrics_info())
+        results = []
         for epoch in range(self.epochs):
             for bat_users, bat_pos_items, bat_neg_items in data_iter:
                 feed = {self.user_ph: bat_users,
@@ -199,13 +200,17 @@ class NGCF(AbstractRecommender):
                         self.mess_dropout_ph: self.mess_dropout}
                 self.sess.run(self.train_opt, feed_dict=feed)
             result = self.evaluate_model()
-            self.logger.info("epoch %d:\t%s" % (epoch, result))
+            results.append([result])
+            buf = '\t'.join([("%.8f" % x).ljust(12) for x in result])
+            self.logger.info("epoch %d:\t%s" % (epoch, buf))
+        return results
 
     def _train_pointwise(self):
         data_iter = PointwiseSampler(self.dataset.train_data, num_neg=1,
                                      batch_size=self.batch_size,
                                      shuffle=True, drop_last=False)
         self.logger.info(self.evaluator.metrics_info())
+        results = []
         for epoch in range(self.epochs):
             for bat_users, bat_items, bat_labels in data_iter:
                 feed = {self.user_ph: bat_users,
@@ -213,13 +218,16 @@ class NGCF(AbstractRecommender):
                         self.label_ph: bat_labels}
                 self.sess.run(self.train_opt, feed_dict=feed)
             result = self.evaluate_model()
-            self.logger.info("epoch %d:\t%s" % (epoch, result))
+            results.append([result])
+            buf = '\t'.join([("%.8f" % x).ljust(12) for x in result])
+            self.logger.info("epoch %d:\t%s" % (epoch, buf))
+        return results
 
     def evaluate_model(self):
         feed = {self.node_dropout_ph: 0.0,
                 self.mess_dropout_ph: [0.0]*len(self.mess_dropout)}
         self.sess.run(self.assign_opt, feed_dict=feed)  # for accelerating evaluation
-        return self.evaluator.evaluate(self)
+        return self.evaluator.my_evaluate(self)
 
     def predict(self, users, neg_items=None):
         feed_dict = {self.user_ph: users}
