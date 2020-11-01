@@ -94,13 +94,13 @@ class FISM(AbstractRecommender):
         # for evaluation
         self.batch_ratings = tf.matmul(user_emb, self.item_embeddings, transpose_b=True) + self.item_biases
 
-    def train_model(self):
+    def train_model(self) -> list:
         if self.is_pairwise:
             return self._train_pairwise()
         else:
             return self._train_pointwise()
 
-    def _train_pairwise(self):
+    def _train_pairwise(self) -> list:
         data_iter = FISMPairwiseSampler(self.dataset.train_data, pad=self.pad_idx,
                                         batch_size=self.batch_size, shuffle=True, drop_last=False)
         self.logger.info(self.evaluator.metrics_info())
@@ -120,7 +120,7 @@ class FISM(AbstractRecommender):
             results.append[result]
         return results
 
-    def _train_pointwise(self):
+    def _train_pointwise(self) -> list:
         data_iter = FISMPointwiseSampler(self.dataset.train_data, pad=self.pad_idx,
                                          batch_size=self.batch_size, shuffle=True, drop_last=False)
         self.logger.info(self.evaluator.metrics_info())
@@ -140,8 +140,8 @@ class FISM(AbstractRecommender):
             self.logger.info("epoch %d:\t%s" % (epoch, buf))
         return results
 
-    def evaluate_model(self):
-        return self.evaluator.my_evaluate(self)
+    def evaluate_model(self) -> list:
+        return self.evaluator.evaluate(self)
 
     def predict(self, users):
         his_items = [self.user_train_dict[u] for u in users]

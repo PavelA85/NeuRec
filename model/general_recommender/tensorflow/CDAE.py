@@ -102,7 +102,7 @@ class CDAE(AbstractRecommender):
         # for evaluation
         self.batch_ratings = tf.matmul(hidden_ori, self.de_embeddings, transpose_b=True) + self.de_bias
 
-    def train_model(self):
+    def train_model(self) -> list:
         train_users = [user for user in range(self.num_users) if self.train_csr_mat[user].nnz]
         user_iter = DataIterator(train_users, batch_size=self.batch_size, shuffle=True, drop_last=False)
         self.logger.info(self.evaluator.metrics_info())
@@ -148,8 +148,8 @@ class CDAE(AbstractRecommender):
             self.logger.info("epoch %d:\t%s" % (epoch, buf))
         return results
 
-    def evaluate_model(self):
-        return self.evaluator.my_evaluate(self)
+    def evaluate_model(self) -> list:
+        return self.evaluator.evaluate(self)
 
     def predict(self, users):
         users = np.asarray(users)

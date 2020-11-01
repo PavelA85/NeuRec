@@ -80,17 +80,18 @@ class FPMC(AbstractRecommender):
         self.fpmc.reset_parameters(self.param_init)
         self.optimizer = torch.optim.Adam(self.fpmc.parameters(), lr=self.lr)
 
-    def train_model(self):
+    def train_model(self) -> list:
         if self.is_pairwise:
-            self._train_pairwise()
+            return self._train_pairwise()
         else:
-            self._train_pointwise()
+            return self._train_pointwise()
 
-    def _train_pairwise(self):
+    def _train_pairwise(self) -> list:
         data_iter = TimeOrderPairwiseSampler(self.dataset.train_data,
                                              len_seqs=1, len_next=1, num_neg=1,
                                              batch_size=self.batch_size,
                                              shuffle=True, drop_last=False)
+        results = []
         self.logger.info(self.evaluator.metrics_info())
         for epoch in range(self.epochs):
             self.fpmc.train()
@@ -115,13 +116,17 @@ class FPMC(AbstractRecommender):
                 loss.backward()
                 self.optimizer.step()
             result = self.evaluate_model()
-            self.logger.info("epoch %d:\t%s" % (epoch, result))
+            results.append([result])
+            buf = '\t'.join([("%.8f" % x).ljust(12) for x in result])
+            self.logger.info("epoch %d:\t%s" % (epoch, buf))
+        return results
 
-    def _train_pointwise(self):
+    def _train_pointwise(self) -> list:
         data_iter = TimeOrderPointwiseSampler(self.dataset.train_data,
                                               len_seqs=1, len_next=1, num_neg=1,
                                               batch_size=self.batch_size,
                                               shuffle=True, drop_last=False)
+        results = []
         self.logger.info(self.evaluator.metrics_info())
         for epoch in range(self.epochs):
             self.fpmc.train()
@@ -143,9 +148,12 @@ class FPMC(AbstractRecommender):
                 loss.backward()
                 self.optimizer.step()
             result = self.evaluate_model()
-            self.logger.info("epoch %d:\t%s" % (epoch, result))
+            results.append([result])
+            buf = '\t'.join([("%.8f" % x).ljust(12) for x in result])
+            self.logger.info("epoch %d:\t%s" % (epoch, buf))
+        return results
 
-    def evaluate_model(self):
+    def evaluate_model(self) -> list:
         self.fpmc.eval()
         return self.evaluator.evaluate(self)
 

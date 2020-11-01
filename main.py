@@ -1,7 +1,5 @@
 import warnings
 
-from matplotlib import pylab
-
 warnings.simplefilter(action='ignore', category=FutureWarning)
 
 import tensorflow as tf
@@ -17,8 +15,11 @@ import numpy as np
 import random
 
 import pprint
+import matplotlib.pyplot as plt
+from reckit import timer
 
 pp = pprint.PrettyPrinter(indent=4)
+
 
 def _set_random_seed(seed=2020):
     np.random.seed(seed)
@@ -74,100 +75,88 @@ def find_recommender(recommender, platform="pytorch"):
     return Recommender
 
 
-def mymain():
+def prepare_metrics(config):
+    return list(x + '@' + str(y)
+                for x in config.metric
+                for y in config.top_k)
+
+
+def prepare_results(results, metrics):
+    result_dict = {value: [] for value in metrics}
+
+    for epoch, result in enumerate(results):
+        for metric in result:
+            for item, value in enumerate(metric):
+                result_dict[metrics[item]].append(value)
+    return result_dict
+
+
+def myplot(result, metrics, recommender, path):
+    for m in metrics:
+        plt.plot(list(range(len(result[m]))), result[m], label=m)
+
+    plt.xlabel('epoch')
+    plt.ylabel('value')
+    plt.title(recommender)
+    plt.legend(bbox_to_anchor=(1.05, 1), loc='upper left', title='metrics', title_fontsize='xx-large')
+    fig = plt.gcf()
+
+    if len(path) > 0:
+        fig.savefig(os.path.join(path, recommender + '.png'), bbox_inches='tight')
+    plt.show()
+
+
+@timer
+def evaluate(algorithm, path):
     config = Configurator()
     config.add_config("NeuRec.ini", section="NeuRec")
-    config.parse_cmd()
+    # config.parse_cmd()
     os.environ['CUDA_VISIBLE_DEVICES'] = str(config["gpu_id"])
     _set_random_seed(config["seed"])
+    config.sections['NeuRec:[NeuRec]']['recommender'] = algorithm
     Recommender = find_recommender(config.recommender, platform=config.platform)
-
-    model_cfg = os.path.join("conf", config.recommender + ".ini")
+    model_cfg = os.path.join("conf", algorithm + ".ini")
     config.add_config(model_cfg, section="hyperparameters", used_as_summary=True)
-
+    config.sections[algorithm + ":[hyperparameters]"]['epochs'] = '1'
+    print('doing {0} {1}'.format(algorithm, config.summarize()))
     recommender = Recommender(config)
-    results = recommender.train_model()
+    recommender.epochs = 500
+    result = recommender.train_model()
+    metrics = prepare_metrics(config)
+    result = prepare_results(result, metrics)
+    myplot(result, metrics, algorithm, path)
 
-    ######################################
-    import pprint
-    pp = pprint.PrettyPrinter(indent=4)
-    myresult = {x + '@' + str(y): [] * config.epochs for x in config.metric for y in config.top_k}
-    metrics = list(x + '@' + str(y) for x in config.metric for y in config.top_k)
-    for epoch, r in enumerate(results):
-        for metric_arr in r:
-            for itenN, value in enumerate(metric_arr):
-                # print("{} {} {}".format(epoch, itenN, value))
-                myresult[metrics[itenN]].append(value)
-
-    pp.pprint(myresult)
-    ######################################
-    import matplotlib.pyplot as plt
-    for m in metrics:
-        plt.plot(list(range(config.epochs)), myresult[m], label=m)
-
-    plt.xlabel('epoch')
-    plt.ylabel('value')
-    plt.legend(bbox_to_anchor=(1.05, 1), loc='upper left', title='metrics', title_fontsize='xx-large')
-    fig = plt.gcf()
-
-    fig.savefig('books_read1.png', bbox_inches='tight')
-    plt.show()
-    ######################################
-    return results, {x + str(y): [] * config.epochs for x in config.metric for y in config.top_k}
-
-
-def myplot(results, config, path):
-    myresult = {x + '@' + str(y): [] * config.epochs for x in config.metric for y in config.top_k}
-    metrics = list(x + '@' + str(y) for x in config.metric for y in config.top_k)
-    for epoch, r in enumerate(results):
-        for metric_arr in r:
-            for itemN, value in enumerate(metric_arr):
-                myresult[metrics[itemN]].append(value)
-
-    #pp.pprint(myresult)
-    ######################################
-    import matplotlib.pyplot as plt
-    for m in metrics:
-        plt.plot(list(range(config.epochs)), myresult[m], label=m)
-
-    plt.xlabel('epoch')
-    plt.ylabel('value')
-    plt.title(config.recommender)
-    plt.legend(bbox_to_anchor=(1.05, 1), loc='upper left', title='metrics', title_fontsize='xx-large')
-    fig = plt.gcf()
-
-    fig.savefig(os.path.join(path, config.recommender + '.png'), bbox_inches='tight')
-    plt.show()
+    return {algorithm: result}, metrics
 
 
 def main():
     from datetime import datetime
-    rez = 'C:/Projects/NeuRec/results/' + datetime.now().strftime('%Y%m%d%H%M%S')
-    os.mkdir(rez)
+    path = 'C:/Projects/NeuRec/results/' + datetime.now().strftime('%Y%m%d%H%M%S')
+    os.mkdir(path)
 
-    for rec in ['MF', 'Caser', 'CDAE',
-                #'FISM',
-                'FPMC',
-                #'HGN',
-                'LightGCN',  'MultVAE', 'NGCF', 'TransRec']:
-        config = Configurator()
-        config.add_config("NeuRec.ini", section="NeuRec")
-        config.parse_cmd()
-        os.environ['CUDA_VISIBLE_DEVICES'] = str(config["gpu_id"])
-        _set_random_seed(config["seed"])
-        config.sections['NeuRec:[NeuRec]']['recommender'] = rec
-        Recommender = find_recommender(config.recommender, platform=config.platform)
+    results = []
+    general = ['MF', 'CDAE', 'LightGCN', 'MultVAE', 'NGCF']  ##',FISM']
+    sequential = ['Caser', 'FPMC', 'HGN', 'TransRec']
+    for algo in [*general, *sequential]:
+        result, metrics = evaluate(algo, path)
+        results.append(result)
 
-        model_cfg = os.path.join("conf", rec + ".ini")
-        config.add_config(model_cfg, section="hyperparameters", used_as_summary=True)
+    #pp.pprint(results)
 
-        config.sections[rec + ":[hyperparameters]"]['epochs'] = '20'
+    for result in results:
+        for metric in metrics:
+            algo, val = next(iter(result.items()))
+            label = algo + '_' + metric
+            plt.plot(list(range(len(val[metric]))), val[metric], label=label)
 
-        print('doing {0} {1}'.format(rec, config.summarize()))
-
-        recommender = Recommender(config)
-        results = recommender.train_model()
-        myplot(results, config, rez)
+    plt.xlabel('epoch')
+    plt.ylabel('value')
+    plt.title('Single plot for all metrics and algo')
+    plt.legend(bbox_to_anchor=(1.05, 1), loc='upper left', title='metrics', title_fontsize='xx-large')
+    fig = plt.gcf()
+    if len(path) > 0:
+        fig.savefig(os.path.join(path, 'all' + '.png'), bbox_inches='tight')
+    plt.show()
 
 
 if __name__ == "__main__":

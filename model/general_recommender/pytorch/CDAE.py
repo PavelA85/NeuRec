@@ -119,11 +119,12 @@ class CDAE(AbstractRecommender):
         self.cdae.reset_parameters(self.param_init)
         self.optimizer = torch.optim.Adam(self.cdae.parameters(), lr=self.lr)
 
-    def train_model(self):
+    def train_model(self) -> list:
         train_users = [user for user in range(self.num_users) if self.train_csr_mat[user].nnz]
         user_iter = DataIterator(train_users, batch_size=self.batch_size, shuffle=True, drop_last=False)
 
         self.logger.info(self.evaluator.metrics_info())
+        results = []
         for epoch in range(self.epochs):
             self.cdae.train()
             for bat_users in user_iter:
@@ -165,9 +166,12 @@ class CDAE(AbstractRecommender):
                 loss.backward()
                 self.optimizer.step()
             result = self.evaluate_model()
-            self.logger.info("epoch %d:\t%s" % (epoch, result))
+            results.append([result])
+            buf = '\t'.join([("%.8f" % x).ljust(12) for x in result])
+            self.logger.info("epoch %d:\t%s" % (epoch, buf))
+        return results
 
-    def evaluate_model(self):
+    def evaluate_model(self) -> list:
         self.cdae.eval()
         return self.evaluator.evaluate(self)
 

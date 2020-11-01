@@ -66,7 +66,7 @@ class AbstractRecommender(object):
         return logger
 
     @abc.abstractmethod
-    def train_model(self):
+    def train_model(self) -> list:
         pass
 
     @abc.abstractmethod

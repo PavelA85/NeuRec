@@ -163,7 +163,7 @@ class HGN(AbstractRecommender):
         # for testing
         self.bat_ratings = self._test_rating(user_emb, item_embs, union_out)  # (b,n)
 
-    def train_model(self):
+    def train_model(self) -> list:
         data_iter = TimeOrderPairwiseSampler(self.dataset.train_data, len_seqs=self.seq_L,
                                              len_next=self.seq_T, pad=self.pad_idx,
                                              num_neg=self.seq_T,
@@ -182,13 +182,13 @@ class HGN(AbstractRecommender):
                 self.sess.run(self.train_opt, feed_dict=feed)
 
             result = self.evaluate_model()
-            results.append([result])
             buf = '\t'.join([("%.8f" % x).ljust(12) for x in result])
             self.logger.info("epoch %d:\t%s" % (epoch, buf))
-            return result
+            results.append([result])
+        return results
 
-    def evaluate_model(self):
-        return self.evaluator.my_evaluate(self)
+    def evaluate_model(self) -> list:
+        return self.evaluator.evaluate(self)
 
     def predict(self, users, neg_items=None):
         bat_seq = [self.user_truncated_seq[u] for u in users]

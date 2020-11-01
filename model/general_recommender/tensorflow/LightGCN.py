@@ -143,13 +143,13 @@ class LightGCN(AbstractRecommender):
         u_g_embeddings, i_g_embeddings = tf.split(all_embeddings, [self.num_users, self.num_items], 0)
         return u_g_embeddings, i_g_embeddings
 
-    def train_model(self):
+    def train_model(self) -> list:
         if self.is_pairwise:
             return self._train_pairwise()
         else:
             return self._train_pointwise()
 
-    def _train_pairwise(self):
+    def _train_pairwise(self) -> list:
         data_iter = PairwiseSampler(self.dataset.train_data, num_neg=1,
                                     batch_size=self.batch_size,
                                     shuffle=True, drop_last=False)
@@ -167,7 +167,7 @@ class LightGCN(AbstractRecommender):
             self.logger.info("epoch %d:\t%s" % (epoch, buf))
         return results
 
-    def _train_pointwise(self):
+    def _train_pointwise(self) -> list:
         data_iter = PointwiseSampler(self.dataset.train_data, num_neg=1,
                                      batch_size=self.batch_size,
                                      shuffle=True, drop_last=False)
@@ -185,9 +185,9 @@ class LightGCN(AbstractRecommender):
             self.logger.info("epoch %d:\t%s" % (epoch, buf))
         return results
 
-    def evaluate_model(self):
+    def evaluate_model(self) -> list:
         self.sess.run(self.assign_opt)  # for accelerating evaluation
-        return self.evaluator.my_evaluate(self)
+        return self.evaluator.evaluate(self)
 
     def predict(self, users, neg_items=None):
         feed_dict = {self.user_ph: users}

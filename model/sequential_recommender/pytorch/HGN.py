@@ -156,12 +156,13 @@ class HGN(AbstractRecommender):
         self.hgn.reset_parameters(config["param_init"])
         self.optimizer = torch.optim.Adam(self.hgn.parameters(), weight_decay=self.reg, lr=self.lr)
 
-    def train_model(self):
+    def train_model(self) -> list:
         data_iter = TimeOrderPairwiseSampler(self.dataset.train_data, len_seqs=self.seq_L,
                                              len_next=self.seq_T, pad=self.pad_idx,
                                              num_neg=self.seq_T,
                                              batch_size=self.batch_size,
                                              shuffle=True, drop_last=False)
+        results = []
         self.logger.info(self.evaluator.metrics_info())
         for epoch in range(self.epochs):
             self.hgn.train()
@@ -181,9 +182,12 @@ class HGN(AbstractRecommender):
                 self.optimizer.step()
 
             result = self.evaluate_model()
-            self.logger.info("epoch %d:\t%s" % (epoch, result))
+            results.append([result])
+            buf = '\t'.join([("%.8f" % x).ljust(12) for x in result])
+            self.logger.info("epoch %d:\t%s" % (epoch, buf))
+        return results
 
-    def evaluate_model(self):
+    def evaluate_model(self) -> list:
         self.hgn.eval()
         return self.evaluator.evaluate(self)
 

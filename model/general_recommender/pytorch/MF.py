@@ -72,16 +72,17 @@ class MF(AbstractRecommender):
         self.mf.reset_parameters(self.param_init)
         self.optimizer = torch.optim.Adam(self.mf.parameters(), lr=self.lr)
 
-    def train_model(self):
+    def train_model(self) -> list:
         if self.is_pairwise:
-            self._train_pairwise()
+            return self._train_pairwise()
         else:
-            self._train_pointwise()
+            return self._train_pointwise()
 
-    def _train_pairwise(self):
+    def _train_pairwise(self) -> list:
         data_iter = PairwiseSampler(self.dataset.train_data, num_neg=1,
                                     batch_size=self.batch_size,
                                     shuffle=True, drop_last=False)
+        results = []
         self.logger.info(self.evaluator.metrics_info())
         for epoch in range(self.epochs):
             self.mf.train()
@@ -92,7 +93,7 @@ class MF(AbstractRecommender):
                 yui = self.mf(bat_users, bat_pos_items)
                 yuj = self.mf(bat_users, bat_neg_items)
 
-                loss = pairwise_loss(self.loss_func, yui-yuj, reduction=Reduction.SUM)
+                loss = pairwise_loss(self.loss_func, yui - yuj, reduction=Reduction.SUM)
                 reg_loss = l2_loss(self.mf.user_embeddings(bat_users),
                                    self.mf.item_embeddings(bat_pos_items),
                                    self.mf.item_embeddings(bat_neg_items),
@@ -103,12 +104,16 @@ class MF(AbstractRecommender):
                 loss.backward()
                 self.optimizer.step()
             result = self.evaluate_model()
-            self.logger.info("epoch %d:\t%s" % (epoch, result))
+            results.append([result])
+            buf = '\t'.join([("%.8f" % x).ljust(12) for x in result])
+            self.logger.info("epoch %d:\t%s" % (epoch, buf))
+        return results
 
-    def _train_pointwise(self):
+    def _train_pointwise(self) -> list:
         data_iter = PointwiseSampler(self.dataset.train_data, num_neg=1,
                                      batch_size=self.batch_size,
                                      shuffle=True, drop_last=False)
+        results = []
         self.logger.info(self.evaluator.metrics_info())
         for epoch in range(self.epochs):
             self.mf.train()
@@ -126,9 +131,12 @@ class MF(AbstractRecommender):
                 loss.backward()
                 self.optimizer.step()
             result = self.evaluate_model()
-            self.logger.info("epoch %d:\t%s" % (epoch, result))
+            results.append([result])
+            buf = '\t'.join([("%.8f" % x).ljust(12) for x in result])
+            self.logger.info("epoch %d:\t%s" % (epoch, buf))
+        return results
 
-    def evaluate_model(self):
+    def evaluate_model(self) -> list:
         self.mf.eval()
         return self.evaluator.evaluate(self)
 

@@ -138,7 +138,7 @@ class Caser(AbstractRecommender):
         user_embs = tf.squeeze(user_embs, axis=1)  # (b, 2d)
         self.batch_ratings = tf.matmul(user_embs, self.item_embeddings, transpose_b=True)  # (b, items_num)
 
-    def train_model(self):
+    def train_model(self) -> list:
         data_iter = TimeOrderPairwiseSampler(self.dataset.train_data, len_seqs=self.seq_L,
                                              len_next=self.seq_T, pad=self.pad_idx,
                                              num_neg=self.neg_samples,
@@ -162,8 +162,8 @@ class Caser(AbstractRecommender):
             self.logger.info("epoch %d:\t%s" % (epoch, buf))
         return results
 
-    def evaluate_model(self):
-        return self.evaluator.my_evaluate(self)
+    def evaluate_model(self) -> list:
+        return self.evaluator.evaluate(self)
 
     def predict(self, users):
         bat_seq = [self.user_truncated_seq[u] for u in users]

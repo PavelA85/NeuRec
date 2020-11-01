@@ -86,13 +86,13 @@ class TransRec(AbstractRecommender):
         all_item_emb = tf.expand_dims(self.item_embeddings, axis=0)  # (1,n,d)
         self.batch_ratings = -l2_distance(transed_emb, all_item_emb) + self.item_biases  # (b,n)
 
-    def train_model(self):
+    def train_model(self) -> list:
         if self.is_pairwise:
             return self._train_pairwise()
         else:
             return self._train_pointwise()
 
-    def _train_pairwise(self):
+    def _train_pairwise(self) -> list:
         data_iter = TimeOrderPairwiseSampler(self.dataset.train_data,
                                              len_seqs=1, len_next=1,  num_neg=1,
                                              batch_size=self.batch_size,
@@ -112,7 +112,7 @@ class TransRec(AbstractRecommender):
             self.logger.info("epoch %d:\t%s" % (epoch, buf))
         return results
 
-    def _train_pointwise(self):
+    def _train_pointwise(self) -> list:
         data_iter = TimeOrderPointwiseSampler(self.dataset.train_data,
                                               len_seqs=1, len_next=1, num_neg=1,
                                               batch_size=self.batch_size,
@@ -132,8 +132,8 @@ class TransRec(AbstractRecommender):
             self.logger.info("epoch %d:\t%s" % (epoch, buf))
         return results
 
-    def evaluate_model(self):
-        return self.evaluator.my_evaluate(self)
+    def evaluate_model(self) -> list:
+        return self.evaluator.evaluate(self)
 
     def predict(self, users):
         last_items = [self.user_pos_dict[u][-1] for u in users]
