@@ -1,5 +1,7 @@
 import warnings
 
+import numpy
+
 warnings.simplefilter(action='ignore', category=FutureWarning)
 
 import tensorflow as tf
@@ -19,6 +21,11 @@ import matplotlib.pyplot as plt
 from reckit import timer
 
 pp = pprint.PrettyPrinter(indent=4)
+
+import json
+from datetime import datetime
+
+import pandas as pd
 
 
 def _set_random_seed(seed=2020):
@@ -93,7 +100,7 @@ def prepare_results(results, metrics):
 
 def myplot(result, metrics, recommender, path):
     for m in metrics:
-        plt.plot(list(range(len(result[m]))), result[m], label=m)
+        plt.plot(list(range(len(result[recommender][m]))), result[recommender][m], label=m)
 
     plt.xlabel('epoch')
     plt.ylabel('value')
@@ -102,12 +109,13 @@ def myplot(result, metrics, recommender, path):
     fig = plt.gcf()
 
     if len(path) > 0:
-        fig.savefig(os.path.join(path, recommender + '.png'), bbox_inches='tight')
+        fig.savefig(os.path.join(path, datetime.now().strftime('%Y%m%d%H%M%S') + '_' + recommender + '.png'),
+                    bbox_inches='tight')
     plt.show()
 
 
 @timer
-def evaluate(algorithm, path):
+def evaluate(algorithm):
     config = Configurator()
     config.add_config("NeuRec.ini", section="NeuRec")
     # config.parse_cmd()
@@ -124,39 +132,63 @@ def evaluate(algorithm, path):
     result = recommender.train_model()
     metrics = prepare_metrics(config)
     result = prepare_results(result, metrics)
-    myplot(result, metrics, algorithm, path)
 
     return {algorithm: result}, metrics
 
 
 def main():
-    from datetime import datetime
-    path = 'C:/Projects/NeuRec/results/' + datetime.now().strftime('%Y%m%d%H%M%S')
-    os.mkdir(path)
+    path = 'C:/Projects/NeuRec/results/'
+    # os.mkdir(path)
 
     results = []
     general = ['MF', 'CDAE', 'LightGCN', 'MultVAE', 'NGCF']  ##',FISM']
     sequential = ['Caser', 'FPMC', 'HGN', 'TransRec']
-    for algo in [*general, *sequential]:
-        result, metrics = evaluate(algo, path)
+    for algorithm in [*general, *sequential]:
+        result, metrics = evaluate(algorithm)
+        myplot(result, metrics, algorithm, path)
         results.append(result)
 
-    #pp.pprint(results)
+    json_path = os.path.join(path, datetime.now().strftime('%Y%m%d%H%M%S') + '_results.json')
+    # pd.Series(results).to_json(orient='values', ath_or_buf=json_path)
+
+    pp.pprint(results)
+
+    with open(json_path, 'w',
+              encoding='utf-8') as f:
+        json.dump(results, f, ensure_ascii=False, indent=1, cls=MyEncoder)
 
     for result in results:
         for metric in metrics:
-            algo, val = next(iter(result.items()))
-            label = algo + '_' + metric
+            algorithm, val = next(iter(result.items()))
+            label = algorithm + '_' + metric
             plt.plot(list(range(len(val[metric]))), val[metric], label=label)
 
     plt.xlabel('epoch')
     plt.ylabel('value')
     plt.title('Single plot for all metrics and algo')
     plt.legend(bbox_to_anchor=(1.05, 1), loc='upper left', title='metrics', title_fontsize='xx-large')
+    plt.ylim(ymin=0, ymax=1)
+    plt.xlim(xmin=0, xmax=1)
     fig = plt.gcf()
     if len(path) > 0:
-        fig.savefig(os.path.join(path, 'all' + '.png'), bbox_inches='tight')
+        fig.savefig(os.path.join(path, datetime.now().strftime('%Y%m%d%H%M%S') + '_all' + '.png'), bbox_inches='tight')
     plt.show()
+
+    # with open(json_path) as json_file:
+    #     data = json.load(json_file)
+    #     pp.pprint(data)
+
+
+class MyEncoder(json.JSONEncoder):
+    def default(self, obj):
+        if isinstance(obj, numpy.integer):
+            return int(obj)
+        elif isinstance(obj, numpy.floating):
+            return float(obj)
+        elif isinstance(obj, numpy.ndarray):
+            return obj.tolist()
+        else:
+            return super(MyEncoder, self).default(obj)
 
 
 if __name__ == "__main__":
