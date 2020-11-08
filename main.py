@@ -98,6 +98,50 @@ def prepare_results(results, metrics):
     return result_dict
 
 
+def plot_precision_recall(results, path):
+    prmetrics = [
+        ['Precision@10', 'Recall@10'],
+        ['Precision@20', 'Recall@20'],
+    ]
+
+    for metric in prmetrics:
+        title = 'Plot for ' + metric[0] + metric[1]
+        for index, result in enumerate(results):
+            algorithm, val = next(iter(result.items()))
+            label = algorithm + '_' + metric[0] + ' ' + metric[1]
+            plt.plot(val[metric[0]], val[metric[1]], label=label)
+            plt.xlabel(metric[0])
+            plt.ylabel(metric[1])
+            plt.title(title)
+            plt.legend(bbox_to_anchor=(1.05, 1), loc='upper left', title='metrics', title_fontsize='xx-large')
+            fig = plt.gcf()
+            if len(path) > 0:
+                fig.savefig(os.path.join(path, datetime.now().strftime('%Y%m%d%H%M%S') + '_' + title + '.png'),
+                            bbox_inches='tight')
+            plt.show()
+        #plt.show()
+
+
+def plot_all_results(results, metrics, path):
+    for metric in metrics:
+        title = 'Plot for ' + metric + ' and algo: '
+        for index, result in enumerate(results):
+            algorithm, val = next(iter(result.items()))
+            label = algorithm + '_' + metric
+            plt.plot(list(range(len(val[metric]))), val[metric], label=label)
+            plt.xlabel('epoch')
+            plt.ylabel('value')
+            title += algorithm + ' '
+            plt.title(title)
+            plt.legend(bbox_to_anchor=(1.05, 1), loc='upper left', title='metrics', title_fontsize='xx-large')
+
+        fig = plt.gcf()
+        if len(path) > 0:
+            fig.savefig(os.path.join(path, datetime.now().strftime('%Y%m%d%H%M%S') + '_' + title + '.png'),
+                        bbox_inches='tight')
+        plt.show()
+
+
 def myplot(result, metrics, recommender, path):
     for m in metrics:
         plt.plot(list(range(len(result[recommender][m]))), result[recommender][m], label=m)
@@ -149,7 +193,6 @@ def main():
         results.append(result)
 
     json_path = os.path.join(path, datetime.now().strftime('%Y%m%d%H%M%S') + '_results.json')
-    # pd.Series(results).to_json(orient='values', ath_or_buf=json_path)
 
     pp.pprint(results)
 
@@ -157,22 +200,7 @@ def main():
               encoding='utf-8') as f:
         json.dump(results, f, ensure_ascii=False, indent=1, cls=MyEncoder)
 
-    for result in results:
-        for metric in metrics:
-            algorithm, val = next(iter(result.items()))
-            label = algorithm + '_' + metric
-            plt.plot(list(range(len(val[metric]))), val[metric], label=label)
-
-    plt.xlabel('epoch')
-    plt.ylabel('value')
-    plt.title('Single plot for all metrics and algo')
-    plt.legend(bbox_to_anchor=(1.05, 1), loc='upper left', title='metrics', title_fontsize='xx-large')
-    plt.ylim(ymin=0, ymax=1)
-    plt.xlim(xmin=0, xmax=1)
-    fig = plt.gcf()
-    if len(path) > 0:
-        fig.savefig(os.path.join(path, datetime.now().strftime('%Y%m%d%H%M%S') + '_all' + '.png'), bbox_inches='tight')
-    plt.show()
+    plot_all_results(results, metrics, path)
 
     # with open(json_path) as json_file:
     #     data = json.load(json_file)
