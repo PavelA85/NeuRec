@@ -1,0 +1,100 @@
+2020-10-14 21:59:19.116: 
+columns = UIRT
+filename = dataset/ml-100k.rating
+sep = 	
+item_min = 5
+user_min = 5
+remap_user_id = True
+remap_item_id = True
+split_by = ratio
+train = 0.7
+valid = 0.0
+test = 0.3
+by_time = False
+2020-10-14 21:59:19.117: Data statistic:
+2020-10-14 21:59:19.117: The number of users: 943
+2020-10-14 21:59:19.117: The number of items: 1349
+2020-10-14 21:59:19.117: The number of ratings: 99287
+2020-10-14 21:59:19.117: Average actions of users: 105.29
+2020-10-14 21:59:19.117: Average actions of items: 73.60
+2020-10-14 21:59:19.117: The sparsity of the dataset: 92.195075%
+2020-10-24 08:46:06.529: 
+columns = UIRT
+filename = dataset/ml-100k.rating
+sep = 	
+item_min = 5
+user_min = 5
+remap_user_id = True
+remap_item_id = True
+split_by = ratio
+train = 0.7
+valid = 0.0
+test = 0.3
+by_time = False
+2020-10-24 08:46:06.531: Data statistic:
+2020-10-24 08:46:06.532: The number of users: 943
+2020-10-24 08:46:06.533: The number of items: 1349
+2020-10-24 08:46:06.535: The number of ratings: 99287
+2020-10-24 08:46:06.537: Average actions of users: 105.29
+2020-10-24 08:46:06.539: Average actions of items: 73.60
+2020-10-24 08:46:06.540: The sparsity of the dataset: 92.195075%
+2020-10-24 08:46:53.674: 
+columns = UIRT
+filename = dataset/ml-100k.rating
+sep = 	
+item_min = 5
+user_min = 5
+remap_user_id = True
+remap_item_id = True
+split_by = ratio
+train = 0.7
+valid = 0.0
+test = 0.3
+by_time = False
+2020-10-24 08:46:53.674: 
+columns = UIRT
+filename = dataset/ml-100k.rating
+sep = 	
+item_min = 5
+user_min = 5
+remap_user_id = True
+remap_item_id = True
+split_by = ratio
+train = 0.7
+valid = 0.0
+test = 0.3
+by_time = False
+2020-10-24 08:46:53.677: Data statistic:
+2020-10-24 08:46:53.677: Data statistic:
+2020-10-24 08:46:53.680: The number of users: 943
+2020-10-24 08:46:53.680: The number of users: 943
+2020-10-24 08:46:53.682: The number of items: 1349
+2020-10-24 08:46:53.682: The number of items: 1349
+2020-10-24 08:46:53.685: The number of ratings: 99287
+2020-10-24 08:46:53.685: The number of ratings: 99287
+2020-10-24 08:46:53.689: Average actions of users: 105.29
+2020-10-24 08:46:53.689: Average actions of users: 105.29
+2020-10-24 08:46:53.693: Average actions of items: 73.60
+2020-10-24 08:46:53.693: Average actions of items: 73.60
+2020-10-24 08:46:53.696: The sparsity of the dataset: 92.195075%
+2020-10-24 08:46:53.696: The sparsity of the dataset: 92.195075%
+2020-11-01 07:33:47.051: 
+columns = UIRT
+filename = dataset/ml-100k.rating
+sep = 	
+item_min = 5
+user_min = 5
+remap_user_id = True
+remap_item_id = True
+split_by = ratio
+train = 0.7
+valid = 0.0
+test = 0.3
+by_time = False
+2020-11-01 07:33:47.053: Data statistic:
+2020-11-01 07:33:47.054: The number of users: 943
+2020-11-01 07:33:47.056: The number of items: 1349
+2020-11-01 07:33:47.058: The number of ratings: 99287
+2020-11-01 07:33:47.060: Average actions of users: 105.29
+2020-11-01 07:33:47.063: Average actions of items: 73.60
+2020-11-01 07:33:47.065: The sparsity of the dataset: 92.195075%
